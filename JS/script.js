@@ -3,6 +3,65 @@ document.addEventListener('DOMContentLoaded', function() {
     let allOperators = [];
     let operatorsLoaded = false;
   
+    // Funktion zur Kapitalisierung des ersten Buchstabens
+    function capitalizeFirstLetter(string) {
+        if (!string) return string;
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    // Funktion zur Kapitalisierung aller Operatoren und Definitionen
+    function capitalizeAllContent() {
+        // Operatoren-Namen und Überschriften kapitalisieren
+        document.querySelectorAll('.operator h2 a, .operator-detail h1, .card h2, h1').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+        
+        // Definitionen kapitalisieren (inkl. Operatordetailseiten)
+        document.querySelectorAll('.definition, .Definition, .card p, .operator-detail .definition, .operator-detail .Definition').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+        
+        // Beispielaufgaben kapitalisieren
+        document.querySelectorAll('.example-task').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+        
+        // Vorgehensweise-Schritte kapitalisieren
+        document.querySelectorAll('.example-approach li').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+        
+        // Überschriften in Beispielabschnitten
+        document.querySelectorAll('.example-section h2, .example h3, .example-approach h4').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+        
+        // Textinhalte in Vorschlägen kapitalisieren
+        document.querySelectorAll('.suggestion-item').forEach(element => {
+            // Den Textinhalt ohne die Category-Tag-Elemente erhalten
+            const textNodes = Array.from(element.childNodes)
+                .filter(node => node.nodeType === Node.TEXT_NODE);
+            
+            if (textNodes.length > 0) {
+                textNodes[0].nodeValue = capitalizeFirstLetter(textNodes[0].nodeValue.trim());
+            }
+        });
+        
+        // Zufällige Operatoren auf der Startseite
+        document.querySelectorAll('.operator-card h3 a, .operator-card p:not(.category-tag)').forEach(element => {
+            element.textContent = capitalizeFirstLetter(element.textContent);
+        });
+    }
+
+    // Kapitalisierung initial durchführen
+    capitalizeAllContent();
+
+    // Bei jeder Änderung an der Seite erneut durchführen
+    window.addEventListener('load', capitalizeAllContent);
+    window.addEventListener('DOMNodeInserted', function() {
+        setTimeout(capitalizeAllContent, 100);
+    });
+
     // Verbesserte Funktion zum Laden aller Operatoren
     async function loadAllOperators() {
       console.log("Lade Operatoren...");
@@ -17,6 +76,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Korrekte Pfade verwenden
         const pages = ['AFBs/afb1.html', 'AFBs/afb2.html', 'AFBs/afb3.html'];
         const categoryNames = ['AFB 1', 'AFB 2', 'AFB 3'];
+        
+        // Leere die Operatoren-Array, falls sie bereits Werte enthält
+        allOperators = [];
+        
+        // Operatoren-Synonyme
+        const operatorSynonyms = {
+          'nennen': ['benennen', '(be-)nennen'],
+          'benennen': ['nennen', '(be-)nennen'],
+          '(be-)nennen': ['nennen', 'benennen']
+        };
         
         for (let i = 0; i < pages.length; i++) {
           console.log(`Lade Seite: ${pages[i]}`);
@@ -38,26 +107,76 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = operator.getAttribute('data-name');
             const definition = operator.querySelector('.definition').textContent.trim();
             
-            // URL-Erzeugung korrekt beibehalten
-            const detailPageName = name
-              .replace(/[/]/g, '')
-              .replace(/[\s()]/g, '_')
-              .toLowerCase()
-              .replace('ä', 'ae')
-              .replace('ö', 'oe')
-              .replace('ü', 'ue')
-              .replace('ß', 'ss') + '.html';
-            
-            allOperators.push({
-              name: name,
-              definition: definition,
-              category: categoryNames[i],
-              url: `AFBs/Beispielaufgaben Operatoren/${detailPageName}` // Kompletter Pfad!
-            });
+            // Vermeiden von Duplikaten durch Prüfung, ob bereits vorhanden
+            const isDuplicate = allOperators.some(op => op.name.toLowerCase() === name.toLowerCase());
+            if (!isDuplicate) {
+              // URL-Erzeugung korrekt beibehalten
+              let detailPageName = name
+                .replace(/[/]/g, '')
+                .replace(/[\s()]/g, '_')
+                .toLowerCase()
+                .replace('ä', 'ae')
+                .replace('ö', 'oe')
+                .replace('ü', 'ue')
+                .replace('ß', 'ss') + '.html';
+              
+              // Spezialfall für nennen/benennen - immer nennen.html verwenden
+              const nameLower = name.toLowerCase();
+              if (nameLower === 'benennen' || nameLower === '(be-)nennen') {
+                detailPageName = 'nennen.html';
+              }
+              
+              const operatorEntry = {
+                name: name,
+                definition: definition,
+                category: categoryNames[i],
+                url: `AFBs/Beispielaufgaben Operatoren/${detailPageName}`,
+                alternativeNames: operatorSynonyms[nameLower] || []
+              };
+              
+              allOperators.push(operatorEntry);
+            }
           });
         }
         
-        console.log(`Insgesamt ${allOperators.length} Operatoren geladen`);
+        // Virtuelle Einträge für Synonyme erstellen
+        const virtualEntries = [];
+        
+        allOperators.forEach(operator => {
+          const nameLower = operator.name.toLowerCase();
+          
+          // Für nennen/benennen spezielle virtuelle Einträge erstellen
+          if (nameLower === 'nennen') {
+            // Erstelle virtuelle Einträge für benennen und (be-)nennen, wenn sie nicht vorhanden sind
+            const bennenExists = allOperators.some(op => op.name.toLowerCase() === 'benennen');
+            const beNennenExists = allOperators.some(op => op.name.toLowerCase() === '(be-)nennen');
+            
+            if (!bennenExists) {
+              virtualEntries.push({
+                name: 'Benennen',
+                definition: operator.definition,
+                category: operator.category,
+                url: operator.url,
+                isVirtual: true
+              });
+            }
+            
+            if (!beNennenExists) {
+              virtualEntries.push({
+                name: '(Be-)nennen',
+                definition: operator.definition,
+                category: operator.category,
+                url: operator.url,
+                isVirtual: true
+              });
+            }
+          }
+        });
+        
+        // Virtuelle Einträge hinzufügen
+        allOperators = [...allOperators, ...virtualEntries];
+        
+        console.log(`Insgesamt ${allOperators.length} Operatoren geladen (inkl. virtuelle Einträge)`);
         operatorsLoaded = true;
         return allOperators;
       } catch (error) {
@@ -83,14 +202,49 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     if (searchInput && searchSuggestions) {
-      // Bessere Positionierung des Dropdowns
+      // Verbesserte Positionierung der Vorschläge für mobile Geräte
       function updateSuggestionPosition() {
+        const isMobile = window.innerWidth <= 768;
         const inputRect = searchInput.getBoundingClientRect();
-        searchSuggestions.style.position = 'absolute';
-        searchSuggestions.style.width = `${inputRect.width}px`;
-        searchSuggestions.style.top = `${inputRect.height}px`;
-        searchSuggestions.style.left = '0';
+        searchSuggestions.style.position = isMobile ? 'fixed' : 'absolute';
+        
+        if (isMobile) {
+          // Mobile Positionierung
+          searchSuggestions.style.width = 'calc(100% - 1rem)';
+          searchSuggestions.style.left = '0.5rem';
+          searchSuggestions.style.right = '0.5rem';
+          // Position vom Boden des Eingabefelds
+          searchSuggestions.style.top = `${inputRect.bottom + window.scrollY}px`;
+        } else {
+          // Desktop Positionierung (bestehender Code)
+          searchSuggestions.style.width = `${inputRect.width}px`;
+          searchSuggestions.style.top = `${inputRect.height}px`;
+          searchSuggestions.style.left = '0';
+        }
         searchSuggestions.style.zIndex = '1000';
+      }
+      
+      // Vorschlagsliste mit Schließen-Button anzeigen
+      function showSuggestions(html, isMobile) {
+        if (isMobile) {
+          html = `<div class="suggestion-close">Schließen</div>` + html;
+        }
+        
+        searchSuggestions.innerHTML = html;
+        searchSuggestions.classList.add('active');
+        searchSuggestions.style.display = 'block';
+        
+        // Event-Listener für den Schließen-Button
+        const closeButton = searchSuggestions.querySelector('.suggestion-close');
+        if (closeButton) {
+          closeButton.addEventListener('click', () => {
+            searchSuggestions.classList.remove('active');
+            searchSuggestions.style.display = 'none';
+          });
+        }
+        
+        // Positionierung aktualisieren
+        updateSuggestionPosition();
       }
       
       // Den gesamten .search-box als Container verwenden, anstatt einen neuen zu erstellen
@@ -160,6 +314,12 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             }
             
+            // Spezialfall nennen/benennen
+            if ((query === 'nennen' || query === 'benennen' || query === '(be-)nennen') && 
+                (name === 'nennen' || name === 'benennen' || name === '(be-)nennen')) {
+              score += 90; // Hohe Relevanz für alle Varianten
+            }
+            
             return { operator: op, score };
           })
           .filter(item => item.score > 0)
@@ -168,19 +328,28 @@ document.addEventListener('DOMContentLoaded', function() {
           
           console.log(`${results.length} Ergebnisse gefunden`);
           
-          if (results.length > 0) {
+          // Duplikate für nennen/benennen entfernen
+          const uniqueResults = [];
+          const seenUrls = new Set();
+          
+          results.forEach(result => {
+            if (!seenUrls.has(result.operator.url)) {
+              uniqueResults.push(result);
+              seenUrls.add(result.operator.url);
+            }
+          });
+          
+          if (uniqueResults.length > 0) {
             let html = '';
             
-            results.forEach(result => {
+            uniqueResults.forEach(result => {
               html += `<div class="suggestion-item" data-url="${result.operator.url}">${result.operator.name} <span class="category-tag">${result.operator.category}</span></div>`;
             });
             
-            searchSuggestions.innerHTML = html;
-            searchSuggestions.classList.add('active');
-            searchSuggestions.style.display = 'block';
+            showSuggestions(html, window.innerWidth <= 768);
             
-            // Positionierung noch einmal aktualisieren nach Befüllung
-            updateSuggestionPosition();
+            // Kapitalisierung auf die neu erstellten Elemente anwenden
+            setTimeout(capitalizeAllContent, 10);
           } else {
             searchSuggestions.classList.remove('active');
             searchSuggestions.style.display = 'none';
@@ -227,13 +396,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const pageSuggestions = document.getElementById('pageSuggestions');
     
     if (pageSearchInput && pageSearchButton && pageSuggestions) {
-      // Bessere Positionierung des Dropdowns
+      // Verbesserte Positionierung der Vorschläge für mobile Geräte
       function updatePageSuggestionPosition() {
+        const isMobile = window.innerWidth <= 768;
         const inputRect = pageSearchInput.getBoundingClientRect();
-        pageSuggestions.style.position = 'absolute';
-        pageSuggestions.style.width = `${inputRect.width}px`;
-        pageSuggestions.style.top = `${inputRect.height}px`;
-        pageSuggestions.style.left = '0';
+        pageSuggestions.style.position = isMobile ? 'fixed' : 'absolute';
+        
+        if (isMobile) {
+          // Mobile Positionierung
+          pageSuggestions.style.width = 'calc(100% - 1rem)';
+          pageSuggestions.style.left = '0.5rem';
+          pageSuggestions.style.right = '0.5rem';
+          pageSuggestions.style.top = `${inputRect.bottom + window.scrollY}px`;
+        } else {
+          // Desktop Positionierung
+          pageSuggestions.style.width = `${inputRect.width}px`;
+          pageSuggestions.style.top = `${inputRect.height}px`;
+          pageSuggestions.style.left = '0';
+        }
         pageSuggestions.style.zIndex = '1000';
       }
       
@@ -362,10 +542,45 @@ document.addEventListener('DOMContentLoaded', function() {
     createBreadcrumbs();
   
     // Zufällige Operatoren auf der Startseite anzeigen
+    const originalShowRandomOperators = showRandomOperators;
+    showRandomOperators = function() {
+        originalShowRandomOperators();
+        setTimeout(capitalizeAllContent, 500);
+    };
     showRandomOperators();
   
     // Last-Update Info anzeigen
     showLastUpdate();
+    
+    // Kapitalisierung nach dem Laden der Seite durchführen
+    capitalizeAllContent();
+    
+    // Auch nach dynamischem Laden von Inhalten (Suche, zufällige Operatoren)
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            setTimeout(capitalizeAllContent, 100);
+        });
+    }
+    
+    if (pageSearchInput) {
+        pageSearchInput.addEventListener('input', function() {
+            setTimeout(capitalizeAllContent, 100);
+        });
+    }
+    
+    // Ursprüngliche Funktion zum Suchen anpassen
+    const originalPerformSearch = performSearch;
+    performSearch = function() {
+        originalPerformSearch();
+        setTimeout(capitalizeAllContent, 500);
+    };
+    
+    // Ursprüngliche Funktion zum Seiten-Suchen anpassen
+    const originalPerformPageSearch = performPageSearch;
+    performPageSearch = function() {
+        originalPerformPageSearch();
+        setTimeout(capitalizeAllContent, 500);
+    };
   });
   
   // Aktuelle Seite in der Navigation hervorheben
@@ -538,6 +753,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const dateString = '2025-05-08';
     footerElement.innerHTML = `
-      <p>&copy; 2025 Operatoren-Wiki | Erstellt von schlaumischlumpf | Zuletzt aktualisiert: ${dateString}</p>
+      <p>&copy; 2025 Operatoren-Wiki | Erstellt von Lennart Kassal | Zuletzt aktualisiert: ${dateString}</p>
     `;
   }
