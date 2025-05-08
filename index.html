@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operatoren-Wiki</title>
+  <link rel="stylesheet" href="CSS/styles.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">Operatoren-Wiki</div>
+      <ul>
+        <li><a href="index.html" class="active">Startseite</a></li>
+        <li><a href="AFBs/afb1.html">AFB 1</a></li>
+        <li><a href="AFBs/afb2.html">AFB 2</a></li>
+        <li><a href="AFBs/afb3.html">AFB 3</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="home-main">
+    <div class="hero">
+      <h1>Willkommen im Operatoren-Wiki</h1>
+      <p>Hier können alle Operatoren nach Anforderungsbereich (AFB) nachgeschlagen werden.</p>
+    </div>
+
+    <div class="search-container center">
+      <h2>Operatoren suchen</h2>
+      <div class="search-box">
+        <label for="searchInput"></label><input type="text" id="searchInput" placeholder="Begriff eingeben...">
+        <button id="searchButton">Suchen</button>
+      </div>
+      <div id="searchSuggestions" class="search-suggestions"></div>
+      <div id="searchResults"></div>
+    </div>
+
+    <div class="category-cards">
+      <div class="card">
+        <h2>AFB 1</h2>
+        <p>Reproduktion und Wiedergabe von Wissen</p>
+        <a href="AFBs/afb1.html" class="button">Operatoren anzeigen</a>
+      </div>
+      <div class="card">
+        <h2>AFB 2</h2>
+        <p>Anwendung und Reorganisation von Wissen</p>
+        <a href="AFBs/afb2.html" class="button">Operatoren anzeigen</a>
+      </div>
+      <div class="card">
+        <h2>AFB 3</h2>
+        <p>Transfer und Problemlösung</p>
+        <a href="AFBs/afb3.html" class="button">Operatoren anzeigen</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Operatoren-Wiki | Erstellt von schlaumischlumpf</p>
+  </footer>
+
+  <script src="JS/script.js"></script>
+</body>
+</html>
